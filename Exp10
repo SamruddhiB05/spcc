@@ -1,0 +1,45 @@
+#include <stdio.h> 
+#include <string.h> 
+int main() { 
+// Define an array of strings for intermediate expressions. 
+// Example: "T=A B" means T = A op B (where op will be chosen later). 
+char A[12][12] = {"T=A B", "X=T"}; 
+char B; // Variable to hold a character from the expression 
+int OP = 0; 
+// Display instructions and generate target code based on user input. 
+// Here, we assume the first expression "T=A B" is used. 
+printf("MOV %c, R1\n", A[0][2]); // Prints A from "T=A B" 
+printf("MOV %c, R2\n", A[0][4]); // Prints B from "T=A B" 
+// (Optional) Store the operator character from the expression. 
+// In this case, A[0][3] is a space, so you might need to adjust your input. 
+B = A[0][3];   
+printf("THERE ARE TWO EXPRESSIONS:\n"); 
+printf("1. T = A OP B\n"); 
+printf("2. X = T\n"); 
+printf("CHOOSE THE OPERATOR VALUE FROM THE OPTION:\n"); 
+printf("1. +\n2. -\n3. *\n4. /\n"); 
+scanf("%d", &OP); 
+// Generate the operation based on user choice. 
+switch(OP) { 
+case 1: 
+printf("ADD R1, R2\n"); 
+break; 
+case 2: 
+printf("SUB R1, R2\n"); 
+break; 
+case 3: 
+printf("MUL R1, R2\n"); 
+break; 
+case 4: 
+printf("DIV R1, R2\n"); 
+break; 
+default: 
+printf("Invalid operator option.\n"); 
+break; 
+} 
+// Final move instruction (for demonstration) 
+printf("MOV R1, x\n"); 
+// If you need to pause the console (only use getch() if supported) 
+// getch(); 
+return 0; 
+}
