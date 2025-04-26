@@ -1,0 +1,182 @@
+***************PASS 1 CODE:*********************
+
+#include <stdio.h> 
+#include <stdlib.h> 
+#include <string.h> 
+#define MAX 100 
+typedef struct { 
+char name[MAX]; 
+int mdtIndex; 
+} MNTEntry; 
+typedef struct { 
+char arg[MAX]; 
+char placeholder[MAX]; 
+} ALAEntry; 
+void main() { 
+FILE *input, *mntFile, *mdtFile, *alaFile; 
+char line[MAX], macroName[MAX], args[MAX], temp[MAX]; 
+int mdtIndex = 0, mntIndex = 0, alaIndex = 0; 
+MNTEntry mnt[MAX]; 
+ALAEntry ala[MAX]; 
+input = fopen("macro_input.txt", "r"); 
+mntFile = fopen("mnt.txt", "w"); 
+mdtFile = fopen("mdt.txt", "w"); 
+alaFile = fopen("ala.txt", "w"); 
+if (!input || !mntFile || !mdtFile || !alaFile) { 
+        printf("Error opening files.\n"); 
+        exit(1); 
+    } 
+ 
+    while (fgets(line, MAX, input)) { 
+        if (strstr(line, "MACRO")) { 
+            fgets(line, MAX, input); 
+            sscanf(line, "%s %s", macroName, args); 
+ 
+            // Add to MNT 
+            strcpy(mnt[mntIndex].name, macroName); 
+            mnt[mntIndex].mdtIndex = mdtIndex; 
+            fprintf(mntFile, "%s %d\n", mnt[mntIndex].name, mnt[mntIndex].mdtIndex); 
+            mntIndex++; 
+ 
+            // Add to ALA 
+            alaIndex = 0; 
+            char *arg = strtok(args, ","); 
+            while (arg) { 
+                sprintf(temp, "#%d", alaIndex + 1); 
+                strcpy(ala[alaIndex].arg, arg); 
+                strcpy(ala[alaIndex].placeholder, temp); 
+                fprintf(alaFile, "%s %s\n", ala[alaIndex].arg, ala[alaIndex].placeholder); 
+                alaIndex++; 
+                arg = strtok(NULL, ","); 
+            } 
+ 
+            // Add to MDT 
+            while (fgets(line, MAX, input) && !strstr(line, "MEND")) { 
+                for (int i = 0; i < alaIndex; i++) { 
+                    char *pos = strstr(line, ala[i].arg); 
+                    if (pos) { 
+                        strncpy(temp, line, pos - line); 
+                        temp[pos - line] = '\0'; 
+                        strcat(temp, ala[i].placeholder); 
+                        strcat(temp, pos + strlen(ala[i].arg)); 
+                        strcpy(line, temp); 
+                    } 
+                } 
+                fprintf(mdtFile, "%d %s", mdtIndex++, line); 
+            } 
+            fprintf(mdtFile, "%d MEND\n", mdtIndex++); 
+        } 
+    } 
+ 
+    fclose(input); 
+    fclose(mntFile); 
+    fclose(mdtFile); 
+    fclose(alaFile); 
+ 
+    printf("Pass 1 complete. Check MNT, MDT, and ALA files.\n"); 
+}
+
+***************PASS 2 CODE:*********************
+
+#include <stdio.h> 
+#include <stdlib.h> 
+#include <string.h> 
+ 
+#define MAX 100 
+ 
+typedef struct { 
+    char name[MAX]; 
+    int mdtIndex; 
+} MNTEntry; 
+ 
+typedef struct { 
+    char arg[MAX]; 
+    char placeholder[MAX]; 
+} ALAEntry; 
+ 
+void main() { 
+    FILE *input, *mntFile, *mdtFile, *output; 
+    char line[MAX], macroName[MAX], actualArgs[MAX], temp[MAX]; 
+    int mdtIndex, alaIndex; 
+ 
+    MNTEntry mnt[MAX]; 
+    char mdt[MAX][MAX]; 
+ 
+    input = fopen("macro_input.txt", "r"); 
+    mntFile = fopen("mnt.txt", "r"); 
+    mdtFile = fopen("mdt.txt", "r"); 
+    output = fopen("expanded_code.txt", "w"); 
+ 
+    if (!input || !mntFile || !mdtFile || !output) { 
+        printf("Error opening files.\n"); 
+        exit(1); 
+    } 
+ 
+    // Load MNT 
+    int mntCount = 0; 
+    while (fscanf(mntFile, "%s %d", mnt[mntCount].name, &mnt[mntCount].mdtIndex) != EOF) { 
+        mntCount++; 
+    } 
+ 
+    // Load MDT 
+    int mdtCount = 0; 
+    while (fgets(line, MAX, mdtFile)) { 
+        strcpy(mdt[mdtCount++], line); 
+    } 
+ 
+    // Process input 
+    while (fgets(line, MAX, input)) { 
+        int isMacroCall = 0; 
+        for (int i = 0; i < mntCount; i++) { 
+            if (strstr(line, mnt[i].name)) { 
+                isMacroCall = 1; 
+                strcpy(macroName, mnt[i].name); 
+                sscanf(line, "%*s %s", actualArgs); 
+ 
+                // Replace arguments 
+                char *arg = strtok(actualArgs, ","); 
+                alaIndex = 0; 
+                while (arg) { 
+                    sprintf(temp, "#%d", alaIndex + 1); 
+                    for (int j = mnt[i].mdtIndex; strstr(mdt[j], "MEND") == NULL; j++) { 
+                        char *pos = strstr(mdt[j], temp); 
+                        if (pos) { 
+                            strncpy(temp, mdt[j], pos - mdt[j]); 
+                            temp[pos - mdt[j]] = '\0'; 
+                            strcat(temp, arg); 
+                            strcat(temp, pos + strlen(temp)); 
+                            strcpy(mdt[j], temp); 
+                        } 
+                        fprintf(output, "%s", mdt[j]); 
+                    } 
+                    arg = strtok(NULL, ","); 
+                    alaIndex++; 
+                } 
+                break; 
+            } 
+        } 
+        if (!isMacroCall) { 
+            fprintf(output, "%s", line); 
+        } 
+    } 
+ 
+    fclose(input); 
+    fclose(mntFile); 
+    fclose(mdtFile); 
+    fclose(output); 
+ 
+    printf("Pass 2 complete. Check expanded_code.txt.\n"); 
+} 
+
+***************INPUT CODE:*********************
+
+MACRO
+ADD_MACRO &ARG1,&ARG2
+  LDA #1
+  ADD #2
+  STA RESULT
+MEND
+START 100
+  ADD_MACRO A,B
+  ADD_MACRO X,Y
+END
