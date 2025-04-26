@@ -1,0 +1,91 @@
+#include <stdio.h> 
+#include <string.h> 
+struct op { 
+char l[10];       
+char r[20]; 
+} op[10], pr[10]; 
+int main() { 
+// changed from char l; to char l[10] 
+int i, j, k, m, n, z = 0, a, q; 
+char temp[10], t[10]; 
+char *p, *l; 
+char *tem; 
+char buffer[50]; 
+printf("ENTER THE NUMBER OF STATEMENTS: "); 
+fgets(buffer, sizeof(buffer), stdin); 
+sscanf(buffer, "%d", &n); 
+for (i = 0; i < n; i++) { 
+printf("LEFT: "); 
+fgets(op[i].l, sizeof(op[i].l), stdin); 
+op[i].l[strcspn(op[i].l, "\n")] = '\0';  // remove newline 
+        printf("RIGHT: "); 
+        fgets(op[i].r, sizeof(op[i].r), stdin); 
+        op[i].r[strcspn(op[i].r, "\n")] = '\0';  // remove newline 
+    } 
+ 
+    printf("\nINTERMEDIATE CODE:\n"); 
+    for (i = 0; i < n; i++) { 
+        printf("%s = %s\n", op[i].l, op[i].r); 
+    } 
+ 
+    // Dead code elimination 
+    for (i = 0; i < n - 1; i++) { 
+        strcpy(temp, op[i].l); 
+        for (j = 0; j < n; j++) { 
+            p = strstr(op[j].r, temp); 
+            if (p) { 
+                strcpy(pr[z].l, op[i].l); 
+                strcpy(pr[z].r, op[i].r); 
+                z++; 
+                break; 
+            } 
+        } 
+    } 
+ 
+    strcpy(pr[z].l, op[n - 1].l); 
+    strcpy(pr[z].r, op[n - 1].r); 
+    z++; 
+ 
+    printf("\nAFTER DEAD CODE ELIMINATION:\n"); 
+    for (k = 0; k < z; k++) { 
+        printf("%s = %s\n", pr[k].l, pr[k].r); 
+    } 
+ 
+    // Common sub-expression elimination 
+    for (m = 0; m < z; m++) { 
+        tem = pr[m].r; 
+        for (j = m + 1; j < z; j++) { 
+            p = strstr(tem, pr[j].r); 
+            if (p) { 
+                strcpy(t, pr[j].l); 
+                strcpy(pr[j].l, pr[m].l); 
+                for (i = 0; i < z; i++) { 
+                    l = strstr(pr[i].r, t); 
+                    if (l) { 
+                        int pos = l - pr[i].r; 
+                        strncpy(&pr[i].r[pos], pr[m].l, strlen(pr[m].l)); 
+                    } 
+                } 
+            } 
+        } 
+    } 
+printf("\nELIMINATE COMMON SUB-EXPRESSIONS:\n"); 
+for (i = 0; i < z; i++) { 
+printf("%s = %s\n", pr[i].l, pr[i].r); 
+} 
+// Remove duplicates 
+for (i = 0; i < z; i++) { 
+for (j = i + 1; j < z; j++) { 
+if (strcmp(pr[i].l, pr[j].l) == 0 && strcmp(pr[i].r, pr[j].r) == 0) { 
+pr[i].l[0] = '\0'; // mark for deletion 
+} 
+} 
+} 
+printf("\nOPTIMIZED CODE:\n"); 
+for (i = 0; i < z; i++) { 
+if (pr[i].l[0] != '\0') { 
+printf("%s = %s\n", pr[i].l, pr[i].r); 
+} 
+} 
+return 0; 
+}  
